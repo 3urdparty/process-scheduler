@@ -28,7 +28,7 @@ const addProcess = () => {
   processes.push({
     number: processes.length + 1,
     name: 'Process ' + (processes.length + 1),
-    arrival_time: processes[processes.length - 1]?.finish_time ?? 0,
+    arrival_time: 0,
     burst_time: 10,
     finish_time: (processes[processes.length - 1]?.finish_time ?? 0) + 5,
     priority: 0
@@ -56,12 +56,10 @@ export const ScaleInjectionKey = Symbol('SCALE') as InjectionKey<Ref<number>>
 <template>
   <div class="space-y-8 mt-8">
     <div class="flex gap-2 justify-between items-center px-8">
-      <div class="flex gap-2">
-        <span class="text-violet-500">
-          {{ editing ? 'Editing Enabled' : 'Editing Disabled' }}
-        </span>
+      <label class="text-violet-500 flex gap-3">
         <EditToggle v-model="editing" />
-      </div>
+        {{ editing ? 'Editing Enabled' : 'Editing Disabled' }}
+      </label>
 
       <div class="flex items-center gap-2">
         <button

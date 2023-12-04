@@ -32,6 +32,7 @@
                   <input
                     v-if="!column.editable"
                     :value="column.getter ? column.getter(process) : 0"
+                    disabled
                     class="w-full h-full px-6 py-4 bg-transparent"
                   />
                   <input
@@ -79,7 +80,13 @@ const columns = [
   { name: 'Process', field: 'name', editable: true, type: 'text' },
   { name: 'Arrival Time', field: 'arrival_time', editable: true, type: 'number' },
   { name: 'Burst Time', field: 'burst_time', editable: true, type: 'number' },
-  { name: 'Finish Time', field: 'finish_time', editable: false, type: 'number' },
+  {
+    name: 'Finish Time',
+    field: 'finish_time',
+    editable: false,
+    type: 'number',
+    getter: (process: Process) => process.arrival_time + process.burst_time
+  },
   { name: 'Priority', field: 'priority', editable: true, type: 'number' },
   {
     name: 'Turnaround Time',

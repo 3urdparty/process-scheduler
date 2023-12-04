@@ -14,7 +14,7 @@ export type ProcessFragment = {
   number?: number
   idle?: boolean
   start?: number
-  priority?: number
+  priority: number
 }
 export type Algorithm = {
   name: AlgorithmName
@@ -30,22 +30,23 @@ export const schedule = (
   const filtered_processes = processes.filter((process) => process.burst_time > 0)
   switch (selectedAlgorithm.name) {
     case 'First Come First Serve':
-      fragments = firstComeFirstServe(processes)
+      fragments = nonPreemptiveAlgorithm(processes, tick, (a, b) => a.arrival_time - b.arrival_time)
       break
     case 'Round Robin':
       fragments = roundRobin(filtered_processes, tick, selectedAlgorithm.quantum as number)
       break
     case 'Preemptive SJF':
-      fragments = preemptiveShortestJobFirst(processes, tick)
+      fragments = preemptiveAlgorithm(processes, tick, (a, b) => a.duration - b.duration)
       break
     case 'Non-preemptive SJF':
-      fragments = nonPreemptiveShortestJobFirst(processes, tick)
+      fragments = nonPreemptiveAlgorithm(processes, tick, (a, b) => a.burst_time - b.burst_time)
+
       break
     case 'Preemptive Priority':
-      fragments = preemptivePriorty(processes)
+      fragments = preemptiveAlgorithm(processes, tick, (a, b) => a.priority - b.priority)
       break
     case 'Non-preemptive Priority':
-      fragments = nonPreemptivePriority(processes, tick)
+      fragments = nonPreemptiveAlgorithm(processes, tick, (a, b) => a.priority - b.priority)
       break
   }
   if (selectedAlgorithm.merge) {
@@ -54,27 +55,29 @@ export const schedule = (
   return fragments
 }
 
-const firstComeFirstServe = (processes: Array<Process>) => {
-  return []
-}
-
 export const getTotalBurstTime = (processes: Array<Process>) =>
   processes.reduce((acc, process) => acc + process.burst_time, 0)
 
-const algo = (
+const nonPreemptiveAlgorithm = (
   processes: Array<Process>,
   totalBurst: number,
-preemptive: boolean,
-  prioritizer: (a: Process, b:Process) => number
+  prioritizer: (a: Process, b: Process) => number
 ): ProcessFragment[] => {
   const fragments: ProcessFragment[] = [] // final fragments
   const readyQueue: ProcessFragment[] = [] // represents the process ready queue, for processes that can be executed
+  let remaining: ProcessFragment[] = processes.map((proc) => ({
+    name: proc.name,
+    duration: proc.burst_time,
+    start: proc.arrival_time,
+    number: proc.number,
+    priority: proc.priority
+  })) // represents the process ready queue, for processes that can be executed
 
   let fragmentDuration = 0
   let idleDuration = 0
   let tick = 0
 
-  while (tick < totalBurst || readyQueue.length > 0) {
+  while (remaining.length > 0 && tick < totalBurst) {
     readyQueue.push(
       ...processes
         .filter((process) => process.arrival_time === tick)
@@ -83,64 +86,76 @@ preemptive: boolean,
           name: proc.name,
           duration: proc.burst_time,
           start: proc.arrival_time,
-          number: proc.number
+          number: proc.number,
+          priority: proc.priority
         }))
     )
 
-    const oldReadyQueue = [...readyQueue]
-    // readyQueue.sort((a, b) => a.duration - b.duration)
     if (readyQueue.length <= 0) {
       idleDuration++
       console.log('idle')
     } else {
       if (idleDuration > 0) {
-        fragments.push({ duration: idleDuration, name: 'idle', idle: true })
+        fragments.push({ duration: idleDuration, name: 'idle', idle: true, priority: 0 })
         idleDuration = 0
       }
       fragmentDuration++
       readyQueue[0].duration--
       if (readyQueue[0].duration === 0) {
         fragments.push({ ...readyQueue[0], duration: fragmentDuration })
+        remaining = remaining.filter((proc) => proc.name != readyQueue[0].name)
         readyQueue.shift()
         fragmentDuration = 0
       }
     }
     tick++
   }
-
+  if (readyQueue.length > 0) {
+    fragments.push({ ...readyQueue[0], duration: fragmentDuration })
+  }
   return fragments
 }
-
-const preemptiveShortestJobFirst = (processes: Array<Process>, totalBurst: number) => {
+const preemptiveAlgorithm = (
+  processes: Array<Process>,
+  totalBurst: number,
+  prioritizer: (a: ProcessFragment, b: ProcessFragment) => number
+): ProcessFragment[] => {
   const fragments: ProcessFragment[] = [] // final fragments
   const readyQueue: ProcessFragment[] = [] // represents the process ready queue, for processes that can be executed
+  let remaining: ProcessFragment[] = processes.map((proc) => ({
+    name: proc.name,
+    duration: proc.burst_time,
+    start: proc.arrival_time,
+    number: proc.number,
+    priority: proc.priority
+  })) // represents the process ready queue, for processes that can be executed
 
   let fragmentDuration = 0
   let idleDuration = 0
   let tick = 0
 
-  while (tick < totalBurst || readyQueue.length > 0) {
+  while (remaining.length > 0 && tick < totalBurst) {
     readyQueue.push(
       ...processes
         .filter((process) => process.arrival_time === tick)
-
         .map((proc) => ({
           name: proc.name,
           duration: proc.burst_time,
           start: proc.arrival_time,
-          number: proc.number
+          number: proc.number,
+          priority: proc.priority
         }))
     )
 
     const oldReadyQueue = [...readyQueue]
-    readyQueue.sort((a, b) => a.duration - b.duration)
+    readyQueue.sort(prioritizer)
     const hasChanged = JSON.stringify(oldReadyQueue) !== JSON.stringify(readyQueue)
 
     if (readyQueue.length <= 0) {
       idleDuration++
     } else {
       if (idleDuration > 0) {
-        fragments.push({ duration: idleDuration, name: 'idle', idle: true })
+        fragments.push({ duration: idleDuration, name: 'idle', idle: true, priority: 0 })
         idleDuration = 0
       }
       readyQueue[0].duration--
@@ -151,65 +166,16 @@ const preemptiveShortestJobFirst = (processes: Array<Process>, totalBurst: numbe
       }
       if (readyQueue[0].duration === 0) {
         fragments.push({ ...readyQueue[0], duration: fragmentDuration })
+        remaining = remaining.filter((proc) => proc.name != readyQueue[0].name)
+
         fragmentDuration = 0
         readyQueue.shift()
       }
     }
     tick++
-  }
-  return fragments
-}
-const nonPreemptiveShortestJobFirst = (processes: Array<Process>, totalBurst: number) => {
-  return algo(processes, totalBurst, false, (a, b) => a.burst_time - b.burst_time)
-}
-const preemptivePriorty = (processes: Array<Process>) => {
-  const readyQueue: ProcessFragment[] = []
-  const fragments: ProcessFragment[] = []
-  let fragment
-  const totalBurstTime = processes.reduce((acc, process) => acc + process.burst_time, 0)
-
-  return fragments
-}
-const nonPreemptivePriority = (processes: Array<Process>, totalBurst: number) => {
-  const fragments: ProcessFragment[] = [] // final fragments
-  const readyQueue: ProcessFragment[] = [] // represents the process ready queue, for processes that can be executed
-
-  let fragmentDuration = 0
-  let idleDuration = 0
-  let tick = 0
-
-  while (tick < totalBurst || readyQueue.length > 0) {
-    readyQueue.push(
-      ...processes
-        .filter((process) => process.arrival_time === tick)
-        .sort((a, b) => a.priority - b.priority)
-        .map((proc) => ({
-          name: proc.name,
-          duration: proc.burst_time,
-          start: proc.arrival_time,
-          number: proc.number
-        }))
-    )
-
-    const oldReadyQueue = [...readyQueue]
-    // readyQueue.sort((a, b) => a.duration - b.duration)
-    if (readyQueue.length <= 0) {
-      idleDuration++
-      console.log('idle')
-    } else {
-      if (idleDuration > 0) {
-        fragments.push({ duration: idleDuration, name: 'idle', idle: true })
-        idleDuration = 0
-      }
-      fragmentDuration++
-      readyQueue[0].duration--
-      if (readyQueue[0].duration === 0) {
-        fragments.push({ ...readyQueue[0], duration: fragmentDuration })
-        readyQueue.shift()
-        fragmentDuration = 0
-      }
-    }
-    tick++
+  } 
+  if (readyQueue.length > 0) {
+    fragments.push({ ...readyQueue[0], duration: fragmentDuration })
   }
 
   return fragments
@@ -231,14 +197,15 @@ const roundRobin = (processes: Array<Process>, totalBurst: number, quantum: numb
           name: proc.name,
           duration: proc.burst_time,
           start: proc.arrival_time,
-          number: proc.number
+          number: proc.number,
+          priority: proc.priority
         }))
     )
     if (readyQueue.length <= 0) {
       idleDuration++
     } else {
       if (idleDuration > 0) {
-        fragments.push({ duration: idleDuration, name: 'idle', idle: true })
+        fragments.push({ duration: idleDuration, name: 'idle', idle: true, priority: 0 })
         idleDuration = 0
       }
       fragmentDuration++

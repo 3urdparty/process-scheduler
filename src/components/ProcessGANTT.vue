@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { PlayBackInjectionKey, ScaleInjectionKey } from '@/App.vue'
 import { schedule, type Algorithm } from '@/algorithms'
+import { InformationCircleIcon } from '@heroicons/vue/24/solid'
 import { get, reactify } from '@vueuse/core'
 import { computed, inject, watch, type Ref } from 'vue'
 import type { PlaybackStatus } from './PlayBack.vue'
@@ -35,7 +36,7 @@ watch(props.selectedAlgorithm, (oldProps, newProps) => {}, { immediate: true })
 </script>
 <template>
   <div class="pb-4 overflow-x-scroll overflow-y-hidden scrollbar-none h-20">
-    <div class="flex h-12 items-center w-fit relative">
+    <div class="flex h-12 items-center w-fit relative" v-if="processFragments.length > 0">
       <div
         v-for="(process, idx) in processFragments"
         v-show="process.duration > 0"
@@ -61,9 +62,14 @@ watch(props.selectedAlgorithm, (oldProps, newProps) => {}, { immediate: true })
       </div>
       <span
         class="absolute -right-1 -bottom-11 text-sm font-light text-slate-400 h-full pointer-events-none select-none"
+        v-if="processFragments.length > 0"
       >
         {{ processFragments.reduce((acc, curr) => acc + curr.duration, 0) }}
       </span>
+    </div>
+    <div class="pt-2 gap-1 text-slate-500 flex items-center" v-else>
+      <InformationCircleIcon class="w-5" />
+      No Processes Found...
     </div>
   </div>
 </template>
