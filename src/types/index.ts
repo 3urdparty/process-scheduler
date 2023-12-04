@@ -1,0 +1,30 @@
+
+export type AlgorithmName =
+  | 'Round Robin'
+  | 'Preemptive SJF'
+  | 'Non-preemptive SJF'
+  | 'Preemptive Priority'
+  | 'Non-preemptive Priority'
+  | 'First Come First Serve'
+
+export type ProcessFragment = {
+  name: string
+  duration: number
+  number?: number
+  idle?: boolean
+  start: number
+  priority: number
+}
+export type Algorithm = {
+  name: AlgorithmName
+  quantum?: number
+}
+export type Process = {
+    name: string
+    number: number
+    arrival_time: number
+    finish_time: number
+    burst_time: number
+    priority: number
+  }
+  

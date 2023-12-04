@@ -1,63 +1,46 @@
-import type { Process } from './components/ProcessTable.vue'
+import type { Algorithm, Process, ProcessFragment } from './types'
 
-export type AlgorithmName =
-  | 'Round Robin'
-  | 'Preemptive SJF'
-  | 'Non-preemptive SJF'
-  | 'Preemptive Priority'
-  | 'Non-preemptive Priority'
-  | 'First Come First Serve'
-
-export type ProcessFragment = {
-  name: string
-  duration: number
-  number?: number
-  idle?: boolean
-  start?: number
-  priority: number
-}
-export type Algorithm = {
-  name: AlgorithmName
-  quantum?: number
-  merge?: boolean
-}
+// decides which scheduling algorithm the use and then returns the scheduled fragments
 export const schedule = (
-  processes: Array<Process>,
-  selectedAlgorithm: Algorithm,
-  tick: number
+  processes: Array<Process>, // processes to be scheduled
+  selectedAlgorithm: Algorithm, // the selected algorithm
+  tick: number, // the current tick
+  merge: boolean = false // whether to merge the fragments or not
 ): ProcessFragment[] => {
   let fragments: ProcessFragment[] = []
-  const filtered_processes = processes.filter((process) => process.burst_time > 0)
+  const filtered = processes.filter((process) => process.burst_time > 0) // gets rid of processes with no burst time
   switch (selectedAlgorithm.name) {
     case 'First Come First Serve':
-      fragments = nonPreemptiveAlgorithm(processes, tick, (a, b) => a.arrival_time - b.arrival_time)
+      fragments = nonPreemptiveAlgorithm(filtered, tick, (a, b) => a.arrival_time - b.arrival_time)
       break
     case 'Round Robin':
-      fragments = roundRobin(filtered_processes, tick, selectedAlgorithm.quantum as number)
+      fragments = roundRobin(filtered, tick, selectedAlgorithm.quantum as number)
       break
     case 'Preemptive SJF':
-      fragments = preemptiveAlgorithm(processes, tick, (a, b) => a.duration - b.duration)
+      fragments = preemptiveAlgorithm(filtered, tick, (a, b) => a.duration - b.duration)
       break
     case 'Non-preemptive SJF':
-      fragments = nonPreemptiveAlgorithm(processes, tick, (a, b) => a.burst_time - b.burst_time)
-
+      fragments = nonPreemptiveAlgorithm(filtered, tick, (a, b) => a.burst_time - b.burst_time)
       break
     case 'Preemptive Priority':
-      fragments = preemptiveAlgorithm(processes, tick, (a, b) => a.priority - b.priority)
+      fragments = preemptiveAlgorithm(filtered, tick, (a, b) => a.priority - b.priority)
       break
     case 'Non-preemptive Priority':
-      fragments = nonPreemptiveAlgorithm(processes, tick, (a, b) => a.priority - b.priority)
+      fragments = nonPreemptiveAlgorithm(filtered, tick, (a, b) => a.priority - b.priority)
       break
   }
-  if (selectedAlgorithm.merge) {
+  if (merge) {
     fragments = mergeFragments(fragments)
   }
   return fragments
 }
 
+// gets the total burst time of all processes
 export const getTotalBurstTime = (processes: Array<Process>) =>
   processes.reduce((acc, process) => acc + process.burst_time, 0)
 
+// schedules the processes using the non-preemptive algorithm, and returns the fragments
+// the prioritizer function is used to sort the ready queue
 const nonPreemptiveAlgorithm = (
   processes: Array<Process>,
   totalBurst: number,
@@ -93,10 +76,15 @@ const nonPreemptiveAlgorithm = (
 
     if (readyQueue.length <= 0) {
       idleDuration++
-      console.log('idle')
     } else {
       if (idleDuration > 0) {
-        fragments.push({ duration: idleDuration, name: 'idle', idle: true, priority: 0 })
+        fragments.push({
+          duration: idleDuration,
+          name: 'idle',
+          idle: true,
+          priority: 0,
+          start: tick + 1
+        })
         idleDuration = 0
       }
       fragmentDuration++
@@ -155,7 +143,13 @@ const preemptiveAlgorithm = (
       idleDuration++
     } else {
       if (idleDuration > 0) {
-        fragments.push({ duration: idleDuration, name: 'idle', idle: true, priority: 0 })
+        fragments.push({
+          duration: idleDuration,
+          name: 'idle',
+          idle: true,
+          priority: 0,
+          start: tick + 1
+        })
         idleDuration = 0
       }
       readyQueue[0].duration--
@@ -173,7 +167,7 @@ const preemptiveAlgorithm = (
       }
     }
     tick++
-  } 
+  }
   if (readyQueue.length > 0) {
     fragments.push({ ...readyQueue[0], duration: fragmentDuration })
   }
@@ -185,10 +179,18 @@ const roundRobin = (processes: Array<Process>, totalBurst: number, quantum: numb
   const fragments: ProcessFragment[] = [] // final fragments
   const readyQueue: ProcessFragment[] = [] // represents the process ready queue, for processes that can be executed
 
+  let remaining: ProcessFragment[] = processes.map((proc) => ({
+    name: proc.name,
+    duration: proc.burst_time,
+    start: proc.arrival_time,
+    number: proc.number,
+    priority: proc.priority
+  })) // represents the process ready queue, for processes that can be executed
+
   let fragmentDuration = 0
   let idleDuration = 0
   let tick = 0
-  while (tick < totalBurst) {
+  while (remaining.length > 0 && tick < totalBurst) {
     readyQueue.push(
       ...processes
         .filter((process) => process.arrival_time === tick)
@@ -201,26 +203,39 @@ const roundRobin = (processes: Array<Process>, totalBurst: number, quantum: numb
           priority: proc.priority
         }))
     )
+
     if (readyQueue.length <= 0) {
       idleDuration++
     } else {
       if (idleDuration > 0) {
-        fragments.push({ duration: idleDuration, name: 'idle', idle: true, priority: 0 })
+        fragments.push({
+          duration: idleDuration,
+          name: 'idle',
+          idle: true,
+          priority: 0,
+          start: tick + 1
+        })
         idleDuration = 0
       }
       fragmentDuration++
       readyQueue[0].duration--
       if (fragmentDuration === quantum || readyQueue[0].duration === 0) {
-        fragments.push({ ...readyQueue[0], duration: fragmentDuration })
+        fragments.push({ ...readyQueue[0], duration: fragmentDuration, start: tick + 1 })
+
         fragmentDuration = 0
         if (readyQueue[0].duration > 0) {
           readyQueue.push(readyQueue[0])
+        } else {
+          remaining = remaining.filter((proc) => proc.name != readyQueue[0].name)
         }
         readyQueue.shift()
       }
     }
 
     tick++
+  }
+  if (readyQueue.length > 0) {
+    fragments.push({ ...readyQueue[0], duration: fragmentDuration })
   }
   return fragments
 }
@@ -239,6 +254,5 @@ const mergeFragments = (fragments: ProcessFragment[]): ProcessFragment[] => {
   if (currentFragment) {
     mergedFragments.push(currentFragment)
   }
-  console.log(mergedFragments.map((proc) => proc))
   return [...mergedFragments]
 }

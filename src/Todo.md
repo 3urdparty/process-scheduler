@@ -1,4 +1,6 @@
-- [ ] Add P(x)
-- [ ] Add arrival times for interrupting Processes
-- [ ] Add global merge
+- [x] Add P(x)
+- [x] Add arrival times for interrupting Processes
+- [x] Add global merge
 - [ ] make finish time dynamic
+- [ ] Save processes in browser cache
+- [ ] reset button

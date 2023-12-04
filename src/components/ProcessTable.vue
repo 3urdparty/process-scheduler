@@ -61,15 +61,7 @@
 </template>
 
 <script setup lang="ts">
-export type Process = {
-  name: string
-  number: number
-  arrival_time: number
-  finish_time: number
-  burst_time: number
-  priority: number
-}
-
+import { type Process } from '@/types'
 interface Props {
   modelValue: Array<Process>
   editing: Boolean
@@ -102,13 +94,5 @@ const columns = [
     type: 'number',
     getter: (process: Process) => process.finish_time - process.arrival_time - process.burst_time
   }
-]
-const headers = [
-  'Process',
-  'Arrival Time',
-  'Finish Time',
-  'Burst Time',
-  'Turnaround Time',
-  'Waiting Time'
 ]
 </script>
