@@ -41,6 +41,7 @@
                 >
                   <input
                     :disabled="!props.editing"
+                    min="0"
                     v-model.number="process[attribute]"
                     type="number"
                     class="w-full h-full px-6 py-4 bg-transparent"

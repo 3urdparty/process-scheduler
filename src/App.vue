@@ -1,22 +1,14 @@
 <script setup lang="ts">
 import { type Algorithm } from '@/algorithms'
-import { reactive, ref } from 'vue'
+import { provide, reactive, ref, type InjectionKey, type Ref } from 'vue'
 import ComboBox from './components/ComboBox.vue'
 import EditToggle from './components/EditToggle.vue'
+import PlayBack, { type PlaybackStatus } from './components/PlayBack.vue'
 import ProcessGANTT from './components/ProcessGANTT.vue'
 import ProcessTable, { type Process } from './components/ProcessTable.vue'
 const processes = reactive<Process[]>([])
 const editing = ref(false)
 
-const addProcess = () => {
-  processes.push({
-    number: processes.length + 1,
-    name: 'Process ' + (processes.length + 1),
-    arrival_time: processes[processes.length - 1]?.finish_time ?? 0,
-    burst_time: 10,
-    finish_time: (processes[processes.length - 1]?.finish_time ?? 0) + 5
-  })
-}
 const algorithms = reactive<Algorithm[]>([
   { name: 'Round Robin', quantum: 5 },
   { name: 'Preemptive SJF' },
@@ -27,8 +19,39 @@ const algorithms = reactive<Algorithm[]>([
 ])
 
 const selectedAlgorithm = ref(algorithms[0])
+const playbackStatus = reactive<PlaybackStatus>({
+  stepping: false,
+  step: 0,
+  totalStep: 30
+})
+const addProcess = () => {
+  processes.push({
+    number: processes.length + 1,
+    name: 'Process ' + (processes.length + 1),
+    arrival_time: processes[processes.length - 1]?.finish_time ?? 0,
+    burst_time: 10,
+    finish_time: (processes[processes.length - 1]?.finish_time ?? 0) + 5
+  })
+}
+const scale = ref(2)
+const setTotalStep = (num: number) => {
+  playbackStatus.totalStep = num
+}
+const setStep = (num: number) => {
+  playbackStatus.step = num
+}
+provide(ScaleInjectionKey, scale)
+provide(PlayBackInjectionKey, { playback: playbackStatus, setTotalStep, setStep })
 </script>
 
+<script lang="ts">
+export const PlayBackInjectionKey = Symbol('PLAYBACK') as InjectionKey<{
+  playback: PlaybackStatus
+  setTotalStep: (step: number) => void
+  setStep: (step: number) => void
+}>
+export const ScaleInjectionKey = Symbol('SCALE') as InjectionKey<Ref<number>>
+</script>
 <template>
   <div class="space-y-8 mt-8">
     <div class="flex gap-2 justify-between items-center px-8">
@@ -55,7 +78,12 @@ const selectedAlgorithm = ref(algorithms[0])
         />
       </div>
     </div>
-    <ProcessGANTT v-model="processes" class="px-8" :selected-algorithm="selectedAlgorithm" />
+    <div class="px-3 space-y-3">
+      <div class="bg-slate-100 rounded-md pt-3">
+        <ProcessGANTT v-model="processes" class="px-8" :selected-algorithm="selectedAlgorithm" />
+      </div>
+      <PlayBack v-model="playbackStatus" />
+    </div>
     <ProcessTable v-model="processes" class="mx-8" :editing="editing" />
   </div>
 </template>

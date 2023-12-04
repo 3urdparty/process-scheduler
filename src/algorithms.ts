@@ -11,21 +11,22 @@ export type AlgorithmName =
 export type ProcessFragment = {
   name: string
   duration: number
-  number: number
-  start: number
+  number?: number
+  idle?: boolean
+  start?: number
 }
 export type Algorithm = {
   name: AlgorithmName
   quantum?: number
 }
-export const schedule = (processes: Array<Process>, selectedAlgorithm: Algorithm) => {
+export const schedule = (processes: Array<Process>, selectedAlgorithm: Algorithm, tick: number) => {
   switch (selectedAlgorithm.name) {
     case 'First Come First Serve':
       return firstComeFirstServe(processes)
     case 'Round Robin':
-      return roundRobin(processes, selectedAlgorithm.quantum as number)
+      return roundRobin(processes,tick, selectedAlgorithm.quantum as number)
     case 'Preemptive SJF':
-      return preemptiveShortestJobFirst(processes)
+      return preemptiveShortestJobFirst(processes, tick)
     case 'Non-preemptive SJF':
       return nonPreemptiveShortestJobFirst(processes)
     case 'Preemptive Priority':
@@ -45,21 +46,56 @@ const firstComeFirstServe = (processes: Array<Process>) => {
     }))
 }
 
-const preemptiveShortestJobFirst = (processes: Array<Process>) => {
-  const fragments: ProcessFragment[] = []
-  let fragment
-  const totalBurstTime = processes.reduce((acc, process) => acc + process.burst_time, 0)
-  for (let i = 0; i < totalBurstTime; i++) {
-    fragment = processes
-      .filter((process) => process.arrival_time <= i)
-      .sort((a, b) => a.burst_time - b.burst_time)
-      .find((process) => process.burst_time > 0)
-    if (fragment) {
-      const fragment_idx = processes.findIndex((frag) => frag.name == fragment.name)
-      fragments[fragment_idx].duration -= 1
-      fragments.push({ name: fragment.name, duration: 1, start: i, number: fragment.number })
+export const getTotalBurstTime = (processes: Array<Process>) =>
+  processes.reduce((acc, process) => acc + process.burst_time, 0)
+
+const preemptiveShortestJobFirst = (processes: Array<Process>, totalBurst: int) => {
+  const fragments: ProcessFragment[] = [] // final fragments
+  const readyQueue: ProcessFragment[] = [] // represents the process ready queue, for processes that can be executed
+
+  let fragmentDuration = 0
+  let idleDuration = 0
+  let tick = 0
+
+  while (tick < totalBurst) {
+    readyQueue.push(
+      ...processes
+        .filter((process) => process.arrival_time === tick)
+
+        .map((proc) => ({
+          name: proc.name,
+          duration: proc.burst_time,
+          start: proc.arrival_time,
+          number: proc.number
+        }))
+    )
+
+    const oldReadyQueue = [...readyQueue]
+    readyQueue.sort((a, b) => a.duration - b.duration)
+    const hasChanged = JSON.stringify(oldReadyQueue) !== JSON.stringify(readyQueue)
+
+    if (readyQueue.length <= 0) {
+      idleDuration++
+    } else {
+      if (idleDuration > 0) {
+        fragments.push({ duration: idleDuration, name: 'idle', idle: true })
+        idleDuration = 0
+      }
+      readyQueue[0].duration--
+      fragmentDuration++
+      if (hasChanged) {
+        fragments.push({ ...oldReadyQueue[0], duration: fragmentDuration - 1 })
+        fragmentDuration = 1
+      }
+      if (readyQueue[0].duration === 0) {
+        fragments.push({ ...readyQueue[0], duration: fragmentDuration })
+        fragmentDuration = 0
+        readyQueue.shift()
+      }
     }
+    tick++
   }
+  fragments.push({ ...readyQueue[0], duration: fragmentDuration })
   return fragments
 }
 const nonPreemptiveShortestJobFirst = (processes: Array<Process>) => {
@@ -87,37 +123,39 @@ const nonPreemptivePriority = (processes: Array<Process>) => {
   return fragments
 }
 
-const roundRobin = (processes: Array<Process>, quantum: number) => {
-  let readyQueue = processes.map((process) => ({
-    name: process.name,
-    duration: process.burst_time,
-    start: process.arrival_time,
-    number: process.number
-  }))
-  const fragments = []
-  let fragment
-  const totalBurstTime = processes.reduce((acc, process) => acc + process.burst_time, 0)
-  for (let i = 0; i < totalBurstTime; i++) {
-    fragment = readyQueue.find((fragment) => fragment.start === i)
+const roundRobin = (processes: Array<Process>, totalBurst:number, quantum: number) => {
+  const fragments: ProcessFragment[] = [] // final fragments
+  const readyQueue: ProcessFragment[] = [] // represents the process ready queue, for processes that can be executed
 
-    while (fragment) {
-      if (fragment.duration > quantum) {
-        fragments.push({ ...fragment, duration: quantum })
-        readyQueue = readyQueue.slice(1)
-        readyQueue.push({
-          ...fragment,
-          duration: fragment.duration - quantum,
-          start: (readyQueue[readyQueue.length - 1]?.start ?? 0) + quantum
-        })
-      } else {
-        fragments.push(fragment)
-        readyQueue = readyQueue.slice(1)
+  let fragmentDuration = 0
+  const idleDuration = 0
+  let tick = 0;
+  while (tick < totalBurst) {
+    readyQueue.push(
+      ...processes
+        .filter((process) => process.arrival_time === tick)
+
+        .map((proc) => ({
+          name: proc.name,
+          duration: proc.burst_time,
+          start: proc.arrival_time,
+          number: proc.number
+        }))
+    )
+
+    console.log(readyQueue.map((proc) => proc.name + ":" + proc.duration))
+    fragmentDuration++;
+    readyQueue[0].duration--;
+    if (fragmentDuration === quantum || readyQueue[0].duration === 0) {
+      fragments.push({ ...readyQueue[0], duration: fragmentDuration })
+      fragmentDuration = 0
+      if (readyQueue[0].duration > 0) {
+        readyQueue.push(readyQueue[0])
       }
-      fragment = readyQueue.find((fragment) => fragment.start === i)
-      console.log(fragment)
-    }
-    // fragments.push({ name: 'idle', duration: 1 })
-  }
+      readyQueue.shift()
+    } 
 
-  return fragments
+    tick++
+  }
+  return fragments;
 }

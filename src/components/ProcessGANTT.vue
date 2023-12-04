@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { PlayBackInjectionKey, ScaleInjectionKey } from '@/App.vue'
 import { schedule, type Algorithm } from '@/algorithms'
+import { get, reactify } from '@vueuse/core'
+import { computed, inject, watch } from 'vue'
+import type { PlaybackStatus } from './PlayBack.vue'
 import type { Process } from './ProcessTable.vue'
 interface Props {
   modelValue: Array<Process>
@@ -7,43 +11,59 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-// const processFragments = computed<ProcessFragment[]>(() =>
-//   schedule(props.modelValue, props.selectedAlgorithm)
-// )
+const scale = inject(ScaleInjectionKey)
+const { playback, setTotalStep, setStep } = inject(PlayBackInjectionKey) as {
+  playback: PlaybackStatus
+  setTotalStep: (step: number) => void
+  setStep: (step: number) => void
+}
+const step = computed(() => playback.step)
+const processFragments = reactify(schedule)(props.modelValue, props.selectedAlgorithm, step)
+const totalBurstTime = computed(() =>
+  props.modelValue.reduce((acc, curr) => acc + curr.burst_time, 0)
+)
+watch(
+  totalBurstTime,
+  () => {
+    setTotalStep(get(totalBurstTime))
+    setStep(get(totalBurstTime))
+  },
+  { immediate: true }
+)
+watch(
+  () => props.selectedAlgorithm,
+  () => {}
+)
 </script>
 <template>
   <div class="pb-4 overflow-x-scroll overflow-y-hidden scrollbar-none h-20">
     <div class="flex h-12 items-center w-fit relative">
       <div
-        v-for="(process, idx) in schedule(props.modelValue, props.selectedAlgorithm)"
+        v-for="(process, idx) in processFragments"
         v-show="process.duration > 0"
         :key="idx"
-        class="relative px-2 whitespace-nowrap border border-stone-300 py-1.5 transition transform"
-        :style="{ width: `${process.duration * 1.5}rem` }"
+        class="relative px-2 whitespace-nowrap border border-stone-300 py-1.5 transition transform bg-white h-10"
+        :class="{
+          'rounded-l-sm': idx === 0,
+          'rounded-r-md': idx === processFragments.length - 1,
+          'bg-slate-200': process.idle
+        }"
+        :style="{ width: `${process.duration * 2}rem` }"
       >
-        <div class="overflow-clip pointer-events-none select-none">
-          {{ process.duration < 4 ? process.number : process.name }}
+        <div class="overflow-clip pointer-events-none select-none" v-show="!process.idle">
+          {{ process.duration < 4 ? 'P' + process.number : process.name }}
         </div>
         <span
           class="absolute -left-1 -bottom-10 text-sm font-light text-slate-400 h-full truncate pointer-events-none select-none"
           :style="{ width: `${process.duration * 1}rem` }"
         >
-          {{
-            schedule(props.modelValue, props.selectedAlgorithm)
-              .slice(0, idx)
-              .reduce((acc, curr) => acc + curr.duration, 0)
-          }}
+          {{ processFragments.slice(0, idx).reduce((acc, curr) => acc + curr.duration, 0) }}
         </span>
       </div>
       <span
         class="absolute -right-1 -bottom-11 text-sm font-light text-slate-400 h-full pointer-events-none select-none"
       >
-        {{
-          schedule(props.modelValue, props.selectedAlgorithm).reduce(
-            (acc, curr) => acc + curr.duration,
-            0
-          )
-        }}
+        {{ processFragments.reduce((acc, curr) => acc + curr.duration, 0) }}
       </span>
     </div>
   </div>
