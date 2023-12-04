@@ -1,0 +1,4 @@
+- [ ] Add P(x)
+- [ ] Add arrival times for interrupting Processes
+- [ ] Add global merge
+- [ ] make finish time dynamic

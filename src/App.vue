@@ -10,8 +10,8 @@ const processes = reactive<Process[]>([])
 const editing = ref(false)
 
 const algorithms = reactive<Algorithm[]>([
-  { name: 'Round Robin', quantum: 5 },
-  { name: 'Preemptive SJF' },
+  { name: 'Round Robin', quantum: 5, merge: true },
+  { name: 'Preemptive SJF', merge: true },
   { name: 'Non-preemptive SJF' },
   { name: 'Preemptive Priority' },
   { name: 'Non-preemptive Priority' },
@@ -30,7 +30,8 @@ const addProcess = () => {
     name: 'Process ' + (processes.length + 1),
     arrival_time: processes[processes.length - 1]?.finish_time ?? 0,
     burst_time: 10,
-    finish_time: (processes[processes.length - 1]?.finish_time ?? 0) + 5
+    finish_time: (processes[processes.length - 1]?.finish_time ?? 0) + 5,
+    priority: 0
   })
 }
 const scale = ref(2)
@@ -76,6 +77,14 @@ export const ScaleInjectionKey = Symbol('SCALE') as InjectionKey<Ref<number>>
           v-if="selectedAlgorithm.name == 'Round Robin'"
           class="w-14 px-2 py-1.5 border border-stone-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all"
         />
+        <label v-if="['Round Robin', 'Preemptive SJF'].includes(selectedAlgorithm.name)">
+          <input
+            type="checkbox"
+            v-model="selectedAlgorithm.merge"
+            class="py-1.5 border border-stone-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all accent-indigo-400"
+          />
+          Merge Processes
+        </label>
       </div>
     </div>
     <div class="px-3 space-y-3">

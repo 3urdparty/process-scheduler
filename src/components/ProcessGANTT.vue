@@ -2,7 +2,7 @@
 import { PlayBackInjectionKey, ScaleInjectionKey } from '@/App.vue'
 import { schedule, type Algorithm } from '@/algorithms'
 import { get, reactify } from '@vueuse/core'
-import { computed, inject, watch } from 'vue'
+import { computed, inject, watch, type Ref } from 'vue'
 import type { PlaybackStatus } from './PlayBack.vue'
 import type { Process } from './ProcessTable.vue'
 interface Props {
@@ -11,14 +11,15 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const scale = inject(ScaleInjectionKey)
+const scale = inject(ScaleInjectionKey) as Ref<number>
 const { playback, setTotalStep, setStep } = inject(PlayBackInjectionKey) as {
   playback: PlaybackStatus
   setTotalStep: (step: number) => void
   setStep: (step: number) => void
 }
 const step = computed(() => playback.step)
-const processFragments = reactify(schedule)(props.modelValue, props.selectedAlgorithm, step)
+const selectedAlgorithm = computed(() => props.selectedAlgorithm)
+const processFragments = reactify(schedule)(props.modelValue, selectedAlgorithm, step)
 const totalBurstTime = computed(() =>
   props.modelValue.reduce((acc, curr) => acc + curr.burst_time, 0)
 )
@@ -30,10 +31,7 @@ watch(
   },
   { immediate: true }
 )
-watch(
-  () => props.selectedAlgorithm,
-  () => {}
-)
+watch(props.selectedAlgorithm, (oldProps, newProps) => {}, { immediate: true })
 </script>
 <template>
   <div class="pb-4 overflow-x-scroll overflow-y-hidden scrollbar-none h-20">
@@ -42,13 +40,14 @@ watch(
         v-for="(process, idx) in processFragments"
         v-show="process.duration > 0"
         :key="idx"
-        class="relative px-2 whitespace-nowrap border border-stone-300 py-1.5 transition transform bg-white h-10"
+        class="relative px-2 whitespace-nowrap border border-stone-300 py-1.5 transition transform h-10"
         :class="{
-          'rounded-l-sm': idx === 0,
+          'rounded-l-md': idx === 0,
           'rounded-r-md': idx === processFragments.length - 1,
-          'bg-slate-200': process.idle
+          'bg-slate-200': process.idle,
+          'bg-white': !process.idle
         }"
-        :style="{ width: `${process.duration * 2}rem` }"
+        :style="{ width: `${process.duration * scale}rem` }"
       >
         <div class="overflow-clip pointer-events-none select-none" v-show="!process.idle">
           {{ process.duration < 4 ? 'P' + process.number : process.name }}

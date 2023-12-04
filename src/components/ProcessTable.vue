@@ -11,17 +11,10 @@
                 <th
                   scope="col"
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  v-for="(header, idx) in [
-                    'Process',
-                    'Arrival Time',
-                    'Finish Time',
-                    'Burst Time',
-                    'Turnaround Time',
-                    'Waiting Time'
-                  ]"
+                  v-for="(column, idx) in columns"
                   :key="idx"
                 >
-                  {{ header }}
+                  {{ column.name }}
                 </th>
               </tr>
             </thead>
@@ -31,27 +24,31 @@
                 :key="process.name"
                 :class="processIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
               >
-                <td class="px-6 whitespace-nowrap text-sm font-medium text-gray-900">
-                  <input v-model.lazy="process.name" class="w-full h-full px-4 bg-transparent" />
-                </td>
                 <td
                   class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900"
-                  v-for="attribute in ['arrival_time', 'finish_time', 'burst_time']"
-                  :key="attribute"
+                  v-for="(column, idx) in columns"
+                  :key="idx"
                 >
                   <input
-                    :disabled="!props.editing"
+                    v-if="!column.editable"
+                    :value="column.getter ? column.getter(process) : 0"
+                    class="w-full h-full px-6 py-4 bg-transparent"
+                  />
+                  <input
+                    v-else-if="column.type === 'text'"
+                    :disabled="!(column.editable && props.editing)"
+                    v-model.lazy="process[column.field as keyof Process]"
+                    type="text"
+                    class="w-full h-full px-6 py-4 bg-transparent"
+                  />
+                  <input
+                    v-else-if="column.type === 'number'"
+                    :disabled="!(column.editable && props.editing)"
                     min="0"
-                    v-model.number="process[attribute]"
+                    v-model.number="process[column.field as keyof Process]"
                     type="number"
                     class="w-full h-full px-6 py-4 bg-transparent"
                   />
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {{ process.finish_time - process.arrival_time }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {{ process.finish_time - process.arrival_time - process.burst_time }}
                 </td>
               </tr>
             </tbody>
@@ -69,6 +66,7 @@ export type Process = {
   arrival_time: number
   finish_time: number
   burst_time: number
+  priority: number
 }
 
 interface Props {
@@ -77,6 +75,27 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const columns = [
+  { name: 'Process', field: 'name', editable: true, type: 'text' },
+  { name: 'Arrival Time', field: 'arrival_time', editable: true, type: 'number' },
+  { name: 'Burst Time', field: 'burst_time', editable: true, type: 'number' },
+  { name: 'Finish Time', field: 'finish_time', editable: false, type: 'number' },
+  { name: 'Priority', field: 'priority', editable: true, type: 'number' },
+  {
+    name: 'Turnaround Time',
+    field: 'turnaround_time',
+    editable: false,
+    type: 'number',
+    getter: (process: Process) => process.finish_time - process.arrival_time
+  },
+  {
+    name: 'Waiting Time',
+    field: 'waiting_time',
+    editable: false,
+    type: 'number',
+    getter: (process: Process) => process.finish_time - process.arrival_time - process.burst_time
+  }
+]
 const headers = [
   'Process',
   'Arrival Time',
