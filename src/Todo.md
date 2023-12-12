@@ -4,3 +4,14 @@
 - [ ] make finish time dynamic
 - [ ] Save processes in browser cache
 - [ ] reset button
+
+- [ ] Make arrival times show for all processes
+- [ ] calculate total burst time from fcfs
+- [ ] Add ready queue
+- [ ] Add Remaining processes
+- [ ] Add average turnaround times
+- [ ] Add waiting time
+- [ ] compute finish times
+- [ ] Add testing suite
+- [ ] Host app
+- [ ] Host to github pages

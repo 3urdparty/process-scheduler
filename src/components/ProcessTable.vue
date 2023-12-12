@@ -52,6 +52,27 @@
                   />
                 </td>
               </tr>
+              <tr v-if="modelValue.length > 0">
+                <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900"></td>
+                <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900"></td>
+                <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900"></td>
+                <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900"></td>
+                <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900"></td>
+                <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <input
+                    :value="avgTurnaroundTime"
+                    disabled
+                    class="w-full h-full px-6 py-4 bg-transparent"
+                  />
+                </td>
+                <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <input
+                    :value="avgWaitingTime"
+                    disabled
+                    class="w-full h-full px-6 py-4 bg-transparent"
+                  />
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -61,7 +82,9 @@
 </template>
 
 <script setup lang="ts">
+import { calculateTurnaroundTime, calculateWaitingTime } from '@/algorithms'
 import { type Process } from '@/types'
+import { computed } from 'vue'
 interface Props {
   modelValue: Array<Process>
   editing: Boolean
@@ -85,14 +108,26 @@ const columns = [
     field: 'turnaround_time',
     editable: false,
     type: 'number',
-    getter: (process: Process) => process.finish_time - process.arrival_time
+    getter: (process: Process) => calculateTurnaroundTime(process)
   },
   {
     name: 'Waiting Time',
     field: 'waiting_time',
     editable: false,
     type: 'number',
-    getter: (process: Process) => process.finish_time - process.arrival_time - process.burst_time
+    getter: (process: Process) => calculateWaitingTime(process)
   }
 ]
+
+const avgTurnaroundTime = computed(
+  () =>
+    props.modelValue.reduce((acc, curr) => acc + calculateTurnaroundTime(curr), 0) /
+    props.modelValue.length
+)
+
+const avgWaitingTime = computed(
+  () =>
+    props.modelValue.reduce((acc, curr) => acc + calculateWaitingTime(curr), 0) /
+    props.modelValue.length
+)
 </script>

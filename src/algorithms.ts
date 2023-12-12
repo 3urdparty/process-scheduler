@@ -256,3 +256,10 @@ const mergeFragments = (fragments: ProcessFragment[]): ProcessFragment[] => {
   }
   return [...mergedFragments]
 }
+
+export const calculateTurnaroundTime = (process: Process) =>
+  process.finish_time - process.arrival_time
+export const calculateWaitingTime = (process: Process) =>
+  process.finish_time - process.arrival_time - process.burst_time
+
+export const calculateFinishTime = (process: Process) => {}
