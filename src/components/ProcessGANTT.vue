@@ -1,39 +1,32 @@
 <script setup lang="ts">
-import { MergeInjectionKey, PlayBackInjectionKey, ScaleInjectionKey } from '@/App.vue'
+import { useGlobalState } from '@/GlobalState'
 import { schedule } from '@/algorithms'
-import type { Algorithm, Process } from '@/types'
-import { InformationCircleIcon } from '@heroicons/vue/24/solid'
+import { InformationCircleIcon, PlayCircleIcon } from '@heroicons/vue/24/solid'
 import { get, reactify } from '@vueuse/core'
-import { computed, inject, watch, type Ref } from 'vue'
-import type { PlaybackStatus } from './PlayBack.vue'
 
-// Props
-interface Props {
-  modelValue: Array<Process>
-  selectedAlgorithm: Algorithm
-}
-const props = defineProps<Props>()
+import { computed, watch } from 'vue'
 
-// Injects
-const scale = inject(ScaleInjectionKey) as Ref<number>
-const merge = inject(MergeInjectionKey) as Ref<boolean>
-const { playback, setTotalStep, setStep } = inject(PlayBackInjectionKey) as {
-  playback: PlaybackStatus
-  setTotalStep: (step: number) => void
-  setStep: (step: number) => void
-}
-
+const {
+  setStep,
+  setTotalStep,
+  step,
+  selectedAlgorithm,
+  processes,
+  merge,
+  scale,
+  stepping,
+  totalStep
+} = useGlobalState()
 // Computed values
-const step = computed(() => playback.step) // the current step
-const selectedAlgorithm = computed(() => props.selectedAlgorithm) // the selected algorithm
-const processFragments = reactify(schedule)(props.modelValue, selectedAlgorithm, step, merge) // the process fragments
+
+const processFragments = reactify(schedule)(processes, selectedAlgorithm, step, merge) // the process fragments
 const totalBurstTime = computed(() =>
   // the total burst time
-  props.modelValue.reduce((acc, curr) => acc + curr.burst_time, 0)
+  processes.value.reduce((acc, curr) => acc + curr.burst_time, 0)
 )
 const interruptingProcesses = computed(() =>
   // the interrupting processes, for use in highlighting interrupting Processes in the GANTT chart
-  props.modelValue.filter(
+  processes.value.filter(
     (proc) =>
       !(
         get(processFragments)
@@ -44,11 +37,35 @@ const interruptingProcesses = computed(() =>
 )
 
 watch(
-  // watches the processFragments and updates the total step
+  // watches the step and sets the step to the total burst time if it exceeds it
   totalBurstTime,
-  (newVal) => {
+  (newVal, oldVal) => {
     setTotalStep(newVal)
-    setStep(newVal)
+
+    setTimeout(() => {
+      step.value = newVal
+    }, 1)
+  },
+  { immediate: true }
+)
+
+watch(
+  // watches the selectedAlgorithm and resets the step
+  processFragments,
+  () => {
+    processes.value.forEach((proc) => {
+      const fragment = get(processFragments).find((p) => p.name === proc.name)
+      if (!fragment) return
+      const index =
+        get(processFragments).length -
+        get(processFragments)
+          .toReversed()
+          .findIndex((p) => p.name === proc.name) -
+        1
+      const finish_time = get(processFragments)[index].duration + get(processFragments)[index].start
+
+      proc.finish_time = finish_time
+    })
   }
 )
 </script>
@@ -108,6 +125,12 @@ watch(
       </span>
     </div>
     <!-- In case no processes are found -->
+
+    <div class="pt-2 gap-1 text-slate-500 flex items-center" v-else-if="processes.length > 0">
+      <PlayCircleIcon class="w-5" />
+      Press the play button to start the simulation
+    </div>
+
     <div class="pt-2 gap-1 text-slate-500 flex items-center" v-else>
       <InformationCircleIcon class="w-5" />
       No Processes Found...

@@ -11,7 +11,7 @@ export const schedule = (
   const filtered = processes.filter((process) => process.burst_time > 0) // gets rid of processes with no burst time
   switch (selectedAlgorithm.name) {
     case 'First Come First Serve':
-      fragments = nonPreemptiveAlgorithm(filtered, tick, (a, b) => a.arrival_time - b.arrival_time)
+      fragments = nonPreemptiveAlgorithm(filtered, tick)
       break
     case 'Round Robin':
       fragments = roundRobin(filtered, tick, selectedAlgorithm.quantum as number)
@@ -20,7 +20,7 @@ export const schedule = (
       fragments = preemptiveAlgorithm(filtered, tick, (a, b) => a.duration - b.duration)
       break
     case 'Non-preemptive SJF':
-      fragments = nonPreemptiveAlgorithm(filtered, tick, (a, b) => a.burst_time - b.burst_time)
+      fragments = nonPreemptiveAlgorithm(filtered, tick, (a, b) => a.duration - b.duration)
       break
     case 'Preemptive Priority':
       fragments = preemptiveAlgorithm(filtered, tick, (a, b) => a.priority - b.priority)
@@ -44,10 +44,10 @@ export const getTotalBurstTime = (processes: Array<Process>) =>
 const nonPreemptiveAlgorithm = (
   processes: Array<Process>,
   totalBurst: number,
-  prioritizer: (a: Process, b: Process) => number
+  prioritizer?: (a: ProcessFragment, b: ProcessFragment) => number
 ): ProcessFragment[] => {
   const fragments: ProcessFragment[] = [] // final fragments
-  const readyQueue: ProcessFragment[] = [] // represents the process ready queue, for processes that can be executed
+  let readyQueue: ProcessFragment[] = [] // represents the process ready queue, for processes that can be executed
   let remaining: ProcessFragment[] = processes.map((proc) => ({
     name: proc.name,
     duration: proc.burst_time,
@@ -64,7 +64,7 @@ const nonPreemptiveAlgorithm = (
     readyQueue.push(
       ...processes
         .filter((process) => process.arrival_time === tick)
-        .sort(prioritizer)
+
         .map((proc) => ({
           name: proc.name,
           duration: proc.burst_time,
@@ -74,6 +74,8 @@ const nonPreemptiveAlgorithm = (
         }))
     )
 
+    if (prioritizer) readyQueue = readyQueue.sort(prioritizer)
+    console.log(readyQueue.map((proc) => proc.name + ' ' + proc.duration))
     if (readyQueue.length <= 0) {
       idleDuration++
     } else {
@@ -90,7 +92,11 @@ const nonPreemptiveAlgorithm = (
       fragmentDuration++
       readyQueue[0].duration--
       if (readyQueue[0].duration === 0) {
-        fragments.push({ ...readyQueue[0], duration: fragmentDuration })
+        fragments.push({
+          ...readyQueue[0],
+          duration: fragmentDuration,
+          start: tick + 1 - fragmentDuration
+        })
         remaining = remaining.filter((proc) => proc.name != readyQueue[0].name)
         readyQueue.shift()
         fragmentDuration = 0
@@ -99,7 +105,11 @@ const nonPreemptiveAlgorithm = (
     tick++
   }
   if (readyQueue.length > 0) {
-    fragments.push({ ...readyQueue[0], duration: fragmentDuration })
+    fragments.push({
+      ...readyQueue[0],
+      duration: fragmentDuration + 1,
+      start: tick - fragmentDuration
+    })
   }
   return fragments
 }
@@ -155,11 +165,19 @@ const preemptiveAlgorithm = (
       readyQueue[0].duration--
       fragmentDuration++
       if (hasChanged) {
-        fragments.push({ ...oldReadyQueue[0], duration: fragmentDuration - 1 })
+        fragments.push({
+          ...oldReadyQueue[0],
+          duration: fragmentDuration - 1,
+          start: tick - fragmentDuration + 1
+        })
         fragmentDuration = 1
       }
       if (readyQueue[0].duration === 0) {
-        fragments.push({ ...readyQueue[0], duration: fragmentDuration })
+        fragments.push({
+          ...readyQueue[0],
+          duration: fragmentDuration,
+          start: tick + 1 - fragmentDuration
+        })
         remaining = remaining.filter((proc) => proc.name != readyQueue[0].name)
 
         fragmentDuration = 0
@@ -169,7 +187,7 @@ const preemptiveAlgorithm = (
     tick++
   }
   if (readyQueue.length > 0) {
-    fragments.push({ ...readyQueue[0], duration: fragmentDuration })
+    fragments.push({ ...readyQueue[0], duration: fragmentDuration + 1, start: tick - fragmentDuration })
   }
 
   return fragments
@@ -220,7 +238,11 @@ const roundRobin = (processes: Array<Process>, totalBurst: number, quantum: numb
       fragmentDuration++
       readyQueue[0].duration--
       if (fragmentDuration === quantum || readyQueue[0].duration === 0) {
-        fragments.push({ ...readyQueue[0], duration: fragmentDuration, start: tick + 1 })
+        fragments.push({
+          ...readyQueue[0],
+          duration: fragmentDuration,
+          start: tick + 1 - fragmentDuration
+        })
 
         fragmentDuration = 0
         if (readyQueue[0].duration > 0) {
@@ -235,7 +257,7 @@ const roundRobin = (processes: Array<Process>, totalBurst: number, quantum: numb
     tick++
   }
   if (readyQueue.length > 0) {
-    fragments.push({ ...readyQueue[0], duration: fragmentDuration })
+    fragments.push({ ...readyQueue[0], duration: fragmentDuration+ 1, start: tick - fragmentDuration })
   }
   return fragments
 }

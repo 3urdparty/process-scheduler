@@ -1,17 +1,16 @@
 - [x] Add P(x)
 - [x] Add arrival times for interrupting Processes
 - [x] Add global merge
-- [ ] make finish time dynamic
-- [ ] Save processes in browser cache
-- [ ] reset button
-
-- [ ] Make arrival times show for all processes
-- [ ] calculate total burst time from fcfs
-- [ ] Add ready queue
-- [ ] Add Remaining processes
-- [ ] Add average turnaround times
-- [ ] Add waiting time
-- [ ] compute finish times
-- [ ] Add testing suite
+- [x] make finish time dynamic
+- [x] Save processes in browser cache
+- [x] reset button
+- [x] Make arrival times show for all processes
+- [z] calculate total burst time from fcfs
+- [x] Add Remaining processes
+- [x] Calculate finish time for other algorithms by fixing start_time
+- [x] Add average turnaround times
+- [x] Add waiting time
+- [x] compute finish times
+- [x] Add testing suite
 - [ ] Host app
 - [ ] Host to github pages

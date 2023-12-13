@@ -1,59 +1,52 @@
 <script setup lang="ts">
+import { useGlobalState } from '@/GlobalState'
 import { BackwardIcon, ForwardIcon, PlayIcon, StopIcon } from '@heroicons/vue/24/solid'
-import { get, useIntervalFn, useVModel } from '@vueuse/core'
+import { useIntervalFn } from '@vueuse/core'
 
-interface Props {
-  modelValue: PlaybackStatus
-}
-interface Emits {
-  (e: 'update:modelValue', value: PlaybackStatus): true
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-const status = useVModel(props, 'modelValue', emit)
+const { step, stepping, totalStep } = useGlobalState()
 const { pause, resume } = useIntervalFn(
   () => {
-    if (get(status).step == get(status).totalStep) {
-      get(status).stepping = false
+    if (step.value == totalStep.value) {
+      stepping.value = false
       pause()
     } else {
-      get(status).step++
+      step.value++
     }
   },
   150,
   { immediate: false }
 )
+
 const controls = [
   {
     name: 'step-backward',
     icon: BackwardIcon,
-    action: () => get(status).step--,
-    disabled: () => get(status).step == 0
+    action: () => step.value--,
+    disabled: () => step.value == 0
   },
   {
     name: 'pause',
     icon: StopIcon,
     action: () => {
-      get(status).stepping = false
+      stepping.value = false
       pause()
     },
-    disabled: () => !get(status).stepping
+    disabled: () => !stepping.value
   },
   {
     name: 'play',
     icon: PlayIcon,
     action: () => {
-      get(status).stepping = true
+      stepping.value = true
       resume()
     },
-    disabled: () => get(status).stepping || get(status).step == get(status).totalStep
+    disabled: () => stepping.value || step.value == totalStep.value
   },
   {
     name: 'step-forward',
     icon: ForwardIcon,
-    action: () => get(status).step++,
-    disabled: () => get(status).step == get(status).totalStep
+    action: () => step.value++,
+    disabled: () => step.value == totalStep.value
   }
 ]
 </script>
@@ -62,9 +55,9 @@ const controls = [
     <input
       type="range"
       class="range pr-6 accent-violet-500 block w-full"
-      min="0"
-      :max="get(status).totalStep"
-      v-model="get(status).step"
+      :min="0"
+      :max="totalStep"
+      v-model="step"
     />
     <div class="flex items-center gap-2 justify-center">
       <button
@@ -79,10 +72,3 @@ const controls = [
     </div>
   </div>
 </template>
-<script lang="ts">
-export type PlaybackStatus = {
-  stepping: boolean
-  step: number
-  totalStep: number
-}
-</script>

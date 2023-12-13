@@ -1,64 +1,48 @@
 <script setup lang="ts">
-import { provide, reactive, ref, type InjectionKey, type Ref } from 'vue'
+import { ArrowUturnLeftIcon, PlusIcon } from '@heroicons/vue/24/solid'
+import { useFavicon } from '@vueuse/core'
+import { ref } from 'vue'
+import { useGlobalState } from './GlobalState'
 import ComboBox from './components/ComboBox.vue'
 import EditToggle from './components/EditToggle.vue'
-import PlayBack, { type PlaybackStatus } from './components/PlayBack.vue'
+import PlayBack from './components/PlayBack.vue'
 import ProcessGANTT from './components/ProcessGANTT.vue'
 import ProcessTable from './components/ProcessTable.vue'
-import type { Algorithm, Process } from './types'
-
-const processes = reactive<Process[]>([]) // stores the processes
-const editing = ref(false) // whether the user is editing the processes
 
 const merge = ref(true) // whether to merge processes;
 
-const algorithms = reactive<Algorithm[]>([
-  // the algorithms
-  { name: 'Round Robin', quantum: 5 },
-  { name: 'Preemptive SJF' },
-  { name: 'Non-preemptive SJF' },
-  { name: 'Preemptive Priority' },
-  { name: 'Non-preemptive Priority' },
-  { name: 'First Come First Serve' }
-])
-
-const selectedAlgorithm = ref(algorithms[0]) // the selected algorithm
-const playbackStatus = reactive<PlaybackStatus>({
-  // the playback status
-  stepping: false,
-  step: 0,
-  totalStep: 0
-})
-
-// adds a process to the processes array
-const addProcess = () => {
-  processes.push({
-    number: processes.length + 1,
-    name: 'Process ' + (processes.length + 1),
-    arrival_time: 0,
-    burst_time: 10,
-    finish_time: (processes[processes.length - 1]?.finish_time ?? 0) + 5,
-    priority: 0
-  })
-}
-
-const scale = ref(2) // the scale of each process in the GANTT chart
-const setTotalStep = (num: number) => {
-  // sets the total step
-  playbackStatus.totalStep = num
-}
-
-const setStep = (num: number) => {
-  // sets the current step
-  playbackStatus.step = num
-}
-provide(ScaleInjectionKey, scale)
-provide(PlayBackInjectionKey, { playback: playbackStatus, setTotalStep, setStep })
-provide(MergeInjectionKey, merge)
+const {
+  algorithms,
+  setStep,
+  setTotalStep,
+  selectedAlgorithm,
+  scale,
+  editing,
+  addProcess,
+  processes,
+  step,
+  totalStep,
+  stepping
+} = useGlobalState()
+const icon = useFavicon('/src/assets/favicon-32x32.png')
 </script>
 
 <template>
   <div class="space-y-8 mt-8">
+    <div class="items-center">
+      <img src="/src/assets/logo.png" class="w-32" />
+      <h1 class="text-4xl font-bold pl-8 text-violet-800">Grape Process Scheduler</h1>
+      <p class="text-lg font-light pl-9 text-violet-400">
+        Courtesy of
+        <a href="https://github.com/3urdparty/" class="text-violet-700/80 font-medium">@3urdparty</a
+        >, find the source code
+        <a
+          class="text-violet-700/80 font-medium underline"
+          href="https://3urdparty.github.io/grape-process-scheduler/"
+          >here</a
+        >
+      </p>
+    </div>
     <div class="flex gap-2 justify-between items-center px-8">
       <!-- Edit Button -->
       <label class="text-violet-500 flex gap-3">
@@ -67,14 +51,6 @@ provide(MergeInjectionKey, merge)
       </label>
 
       <div class="flex items-center gap-2">
-        <!-- Add Process Button -->
-        <button
-          class="bg-violet-400 text-white p-1.5 rounded-md shadow-sm px-3 focus hover:opacity-75 active:bg-violet-700 transition-all"
-          @click="addProcess"
-        >
-          Add Process
-        </button>
-
         <!-- Select Algorithm Combobox -->
         <ComboBox :options="algorithms" v-model="selectedAlgorithm" class="w-60" />
 
@@ -103,21 +79,26 @@ provide(MergeInjectionKey, merge)
         <ProcessGANTT v-model="processes" class="px-8" :selected-algorithm="selectedAlgorithm" />
       </div>
       <!-- Playback Controls -->
-      <PlayBack v-model="playbackStatus" />
+      <PlayBack />
     </div>
 
+    <div class="flex mx-8 gap-2">
+      <button
+        class="bg-violet-400 text-white p-1.5 rounded-md shadow-sm gap-2 px-2 focus hover:opacity-75 active:bg-violet-700 transition-all flex items-center"
+        @click="addProcess"
+      >
+        <PlusIcon class="w-6 h-6 text-white" />
+        Add Process
+      </button>
+      <button
+        class="bg-violet-400 text-white p-1.5 rounded-md shadow-sm gap-2 px-2 focus hover:opacity-75 active:bg-violet-700 transition-all flex items-center"
+        @click="processes = []"
+      >
+        <ArrowUturnLeftIcon class="w-5 h-5 text-white" />
+        Reset
+      </button>
+    </div>
     <!-- Process table -->
-    <ProcessTable v-model="processes" class="mx-8" :editing="editing" />
+    <ProcessTable class="mx-8" />
   </div>
 </template>
-
-<script lang="ts">
-// Injection keys
-export const PlayBackInjectionKey = Symbol('PLAYBACK') as InjectionKey<{
-  playback: PlaybackStatus
-  setTotalStep: (step: number) => void
-  setStep: (step: number) => void
-}>
-export const ScaleInjectionKey = Symbol('SCALE') as InjectionKey<Ref<number>>
-export const MergeInjectionKey = Symbol('MERGE') as InjectionKey<Ref<boolean>>
-</script>

@@ -20,7 +20,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="(process, processIdx) in modelValue"
+                v-for="(process, processIdx) in processes"
                 :key="process.name"
                 :class="processIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
               >
@@ -30,34 +30,36 @@
                   :key="idx"
                 >
                   <input
-                    v-if="!column.editable"
+                    v-if="!column.field"
                     :value="column.getter ? column.getter(process) : 0"
                     disabled
                     class="w-full h-full px-6 py-4 bg-transparent"
                   />
                   <input
                     v-else-if="column.type === 'text'"
-                    :disabled="!(column.editable && props.editing)"
+                    :disabled="!(column.editable && editing)"
                     v-model.lazy="process[column.field as keyof Process]"
                     type="text"
                     class="w-full h-full px-6 py-4 bg-transparent"
                   />
                   <input
                     v-else-if="column.type === 'number'"
-                    :disabled="!(column.editable && props.editing)"
-                    min="0"
+                    :disabled="!(column.editable && editing)"
+                    :min="column.min"
                     v-model.number="process[column.field as keyof Process]"
-                    type="number"
+                    :type="editing ? 'number' : 'text'"
                     class="w-full h-full px-6 py-4 bg-transparent"
                   />
                 </td>
               </tr>
-              <tr v-if="modelValue.length > 0">
+              <tr v-if="processes.length > 0">
                 <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900"></td>
                 <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900"></td>
                 <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900"></td>
                 <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900"></td>
-                <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900"></td>
+                <td class="whitespace-nowrap text-sm text-md text-right font-medium text-slate-400">
+                  Average =
+                </td>
                 <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900">
                   <input
                     :value="avgTurnaroundTime"
@@ -82,37 +84,33 @@
 </template>
 
 <script setup lang="ts">
+import { useGlobalState } from '@/GlobalState'
 import { calculateTurnaroundTime, calculateWaitingTime } from '@/algorithms'
 import { type Process } from '@/types'
 import { computed } from 'vue'
-interface Props {
-  modelValue: Array<Process>
-  editing: Boolean
-}
 
-const props = defineProps<Props>()
+const { processes, editing } = useGlobalState()
 const columns = [
   { name: 'Process', field: 'name', editable: true, type: 'text' },
-  { name: 'Arrival Time', field: 'arrival_time', editable: true, type: 'number' },
-  { name: 'Burst Time', field: 'burst_time', editable: true, type: 'number' },
+  { name: 'Arrival Time', field: 'arrival_time', editable: true, type: 'number', min: 0 },
+  { name: 'Burst Time', field: 'burst_time', editable: true, type: 'number', min: 1 },
   {
     name: 'Finish Time',
     field: 'finish_time',
     editable: false,
-    type: 'number',
-    getter: (process: Process) => process.arrival_time + process.burst_time
+    type: 'number'
   },
   { name: 'Priority', field: 'priority', editable: true, type: 'number' },
   {
     name: 'Turnaround Time',
-    field: 'turnaround_time',
+
     editable: false,
     type: 'number',
     getter: (process: Process) => calculateTurnaroundTime(process)
   },
   {
     name: 'Waiting Time',
-    field: 'waiting_time',
+
     editable: false,
     type: 'number',
     getter: (process: Process) => calculateWaitingTime(process)
@@ -121,13 +119,13 @@ const columns = [
 
 const avgTurnaroundTime = computed(
   () =>
-    props.modelValue.reduce((acc, curr) => acc + calculateTurnaroundTime(curr), 0) /
-    props.modelValue.length
+    processes.value.reduce((acc, curr) => acc + calculateTurnaroundTime(curr), 0) /
+      processes.value.length || 0
 )
 
 const avgWaitingTime = computed(
   () =>
-    props.modelValue.reduce((acc, curr) => acc + calculateWaitingTime(curr), 0) /
-    props.modelValue.length
+    processes.value.reduce((acc, curr) => acc + calculateWaitingTime(curr), 0) /
+      processes.value.length || 0
 )
 </script>
