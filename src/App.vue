@@ -11,20 +11,8 @@ import ProcessTable from './components/ProcessTable.vue'
 
 const merge = ref(true) // whether to merge processes;
 
-const {
-  algorithms,
-  setStep,
-  setTotalStep,
-  selectedAlgorithm,
-  scale,
-  editing,
-  addProcess,
-  processes,
-  step,
-  totalStep,
-  stepping
-} = useGlobalState()
-const icon = useFavicon('/src/assets/favicon-32x32.png')
+const { algorithms, selectedAlgorithm, scale, editing, addProcess, processes } = useGlobalState()
+useFavicon('/src/assets/favicon-32x32.png')
 </script>
 
 <template>
@@ -38,7 +26,7 @@ const icon = useFavicon('/src/assets/favicon-32x32.png')
         >, find the source code
         <a
           class="text-violet-700/80 font-medium underline"
-          href="https://3urdparty.github.io/grape-process-scheduler/"
+          href="https://github.com/3urdparty/grape-process-scheduler"
           >here</a
         >
       </p>
@@ -63,13 +51,24 @@ const icon = useFavicon('/src/assets/favicon-32x32.png')
         />
 
         <!-- Merge Concurrent identical Processes checkbox -->
-        <label>
+        <label class="flex items-center gap-1">
           <input
             type="checkbox"
             v-model="merge"
             class="py-1.5 border border-stone-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all accent-indigo-400"
           />
           Merge Processes
+        </label>
+
+        <label class="flex items-center gap-2">
+          <input
+            type="range"
+            min="1"
+            max="3"
+            v-model="scale"
+            class="py-1.5 border w-14 border-stone-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-all accent-indigo-400"
+          />
+          Scale
         </label>
       </div>
     </div>

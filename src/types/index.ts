@@ -1,4 +1,3 @@
-
 export type AlgorithmName =
   | 'Round Robin'
   | 'Preemptive SJF'
@@ -10,21 +9,19 @@ export type AlgorithmName =
 export type ProcessFragment = {
   name: string
   duration: number
-  number?: number
   idle?: boolean
   start: number
   priority: number
+  remaining?: number
 }
 export type Algorithm = {
   name: AlgorithmName
   quantum?: number
 }
 export type Process = {
-    name: string
-    number: number
-    arrival_time: number
-    finish_time: number
-    burst_time: number
-    priority: number
-  }
-  
+  name: string
+  arrival_time: number
+  finish_time: number
+  burst_time: number
+  priority: number
+}

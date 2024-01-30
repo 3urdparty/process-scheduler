@@ -5,12 +5,14 @@
 - [x] Save processes in browser cache
 - [x] reset button
 - [x] Make arrival times show for all processes
-- [z] calculate total burst time from fcfs
+- [x] calculate total burst time from fcfs
 - [x] Add Remaining processes
 - [x] Calculate finish time for other algorithms by fixing start_time
 - [x] Add average turnaround times
 - [x] Add waiting time
 - [x] compute finish times
 - [x] Add testing suite
-- [ ] Host app
-- [ ] Host to github pages
+- [x] Host app
+- [x] Host to github pages
+- [ ] Make the interrupt markers show the time and the process name
+- [ ] Hide unvisited interrupts when glidin slider

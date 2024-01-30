@@ -43,7 +43,7 @@ const selected = useVModel(props, 'modelValue', emits)
         leave-to-class="opacity-0"
       >
         <ListboxOptions
-          class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+          class="absolute z-40 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
         >
           <ListboxOption
             as="template"

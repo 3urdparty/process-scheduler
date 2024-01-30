@@ -8,7 +8,7 @@ export const useGlobalState = createGlobalState(() => {
 
   const algorithms = reactive<Algorithm[]>([
     // the algorithms
-    { name: 'Round Robin', quantum: 5 },
+    { name: 'Round Robin', quantum: 3 },
     { name: 'Preemptive SJF' },
     { name: 'Non-preemptive SJF' },
     { name: 'Preemptive Priority' },
@@ -26,8 +26,7 @@ export const useGlobalState = createGlobalState(() => {
   const addProcess = () => {
     const length = processes.value.length
     processes.value.push({
-      number: length + 1,
-      name: 'Process ' + (length + 1),
+      name: 'P' + (length + 1),
       arrival_time: 0,
       burst_time: 10,
       finish_time: (processes.value[length - 1]?.finish_time ?? 0) + 5,
@@ -47,7 +46,7 @@ export const useGlobalState = createGlobalState(() => {
     // sets the current step
     step.value = num
   }
-  const scale = ref(2) // the scale of each process in the GANTT chart
+  const scale = ref(1) // the scale of each process in the GANTT chart
   return {
     algorithms,
     merge,

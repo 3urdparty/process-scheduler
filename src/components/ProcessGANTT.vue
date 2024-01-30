@@ -6,17 +6,7 @@ import { get, reactify } from '@vueuse/core'
 
 import { computed, watch } from 'vue'
 
-const {
-  setStep,
-  setTotalStep,
-  step,
-  selectedAlgorithm,
-  processes,
-  merge,
-  scale,
-  stepping,
-  totalStep
-} = useGlobalState()
+const { setTotalStep, step, selectedAlgorithm, processes, merge, scale } = useGlobalState()
 // Computed values
 
 const processFragments = reactify(schedule)(processes, selectedAlgorithm, step, merge) // the process fragments
@@ -39,7 +29,7 @@ const interruptingProcesses = computed(() =>
 watch(
   // watches the step and sets the step to the total burst time if it exceeds it
   totalBurstTime,
-  (newVal, oldVal) => {
+  (newVal) => {
     setTotalStep(newVal)
 
     setTimeout(() => {
@@ -49,25 +39,17 @@ watch(
   { immediate: true }
 )
 
-watch(
-  // watches the selectedAlgorithm and resets the step
-  processFragments,
-  () => {
-    processes.value.forEach((proc) => {
-      const fragment = get(processFragments).find((p) => p.name === proc.name)
-      if (!fragment) return
-      const index =
-        get(processFragments).length -
-        get(processFragments)
-          .toReversed()
-          .findIndex((p) => p.name === proc.name) -
-        1
-      const finish_time = get(processFragments)[index].duration + get(processFragments)[index].start
-
-      proc.finish_time = finish_time
-    })
+watch([selectedAlgorithm, processes, processFragments], ([, processes, processFragments]) => {
+  for (let i = 0; i < processes.length; i++) {
+    let finishTime = 0
+    for (let j = 0; j < processFragments.length; j++) {
+      if (processFragments[j].name === processes[i].name) {
+        finishTime = processFragments[j].start + processFragments[j].duration
+      }
+    }
+    processes[i].finish_time = finishTime
   }
-)
+})
 </script>
 <template>
   <div class="py-4 overflow-x-scroll overflow-y-hidden scrollbar-none h-24">
@@ -75,12 +57,18 @@ watch(
       <!-- To mark interrupting processes -->
       <div
         v-for="(i, idx) in interruptingProcesses"
+        v-show="i.arrival_time <= step"
         :key="idx"
-        class="absolute z-10 -bottom-5 -left-1 text-sm text-slate-900 flex flex-col items-center"
-        :style="{ left: `${i.arrival_time * scale}rem` }"
+        class="absolute z-10 top-10 text-sm text-slate-900 flex flex-col items-center"
+        :style="{ left: `${i.arrival_time * scale - 0.09}rem` }"
       >
-        <div class="bg-indigo-400 h-3 w-0.5 rounded-full"></div>
-        {{ i.number }}
+        <div class="bg-indigo-400 h-2 w-[2.5px] rounded-full"></div>
+        <div class="-mt-0.5 text-xs" v-if="scale > 1">
+          {{ i.arrival_time }}
+        </div>
+        <div class="-mt-0.5 text-xs text-slate-400" v-if="scale > 1">
+          {{ i.name }}
+        </div>
       </div>
 
       <!-- Represents the processes in action -->
@@ -99,13 +87,14 @@ watch(
       >
         <div class="overflow-clip pointer-events-none select-none" v-show="!process.idle">
           <!-- Shows the process name, shortened if out of space -->
-          {{ process.duration < 4 ? 'P' + process.number : process.name }}
+          {{ process.name }}
         </div>
         <div
-          class="overflow-clip pointer-events-none select-none absolute -top-6 left-2 text-sm text-slate-400"
+          class="overflow-clip pointer-events-none select-none absolute -top-6 -right-2 text-sm text-slate-400"
+          v-if="process.duration * scale > 2"
         >
           <!-- Shows the `Px(y)` notation-->
-          {{ `P${process.start}(${process.duration})` }}
+          {{ `${process.name}(${process.remaining})` }}
         </div>
 
         <!-- Process Fragment finish time -->
