@@ -62,14 +62,14 @@
                 </td>
                 <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900">
                   <input
-                    :value="avgTurnaroundTime"
+                    :value="avgTurnaroundTime.toFixed(2)"
                     disabled
                     class="w-full h-full px-6 py-4 bg-transparent"
                   />
                 </td>
                 <td class="pl-0.5 whitespace-nowrap text-sm font-medium text-gray-900">
                   <input
-                    :value="avgWaitingTime"
+                    :value="avgWaitingTime.toFixed(2)"
                     disabled
                     class="w-full h-full px-6 py-4 bg-transparent"
                   />
@@ -123,6 +123,7 @@ const avgTurnaroundTime = computed(
       processes.value.length || 0
 )
 
+const { selectedAlgorithm } = useGlobalState()
 const avgWaitingTime = computed(
   () =>
     processes.value.reduce((acc, curr) => acc + calculateWaitingTime(curr), 0) /

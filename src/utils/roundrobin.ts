@@ -10,10 +10,11 @@ export const roundRobin = (processes: Array<Process>, totalBurst: number, quantu
     start: proc.arrival_time,
 
     priority: proc.priority
-  })) // represents the process ready queue, for processes that can be executed
+  })) // represents the process readyv queue, for processes that can be executed
 
   let fragmentDuration = 0
   let idleDuration = 0
+  let toPreempt = null
   let tick = 0
   while (remaining.length > 0 && tick < totalBurst) {
     readyQueue.push(
@@ -23,14 +24,20 @@ export const roundRobin = (processes: Array<Process>, totalBurst: number, quantu
           name: proc.name,
           duration: proc.burst_time,
           start: proc.arrival_time,
-
           priority: proc.priority
         }))
+        .sort((a, b) => a.priority - b.priority)
     )
+
+    if (toPreempt) {
+      readyQueue.push(toPreempt)
+      toPreempt = null
+    }
 
     if (readyQueue.length <= 0) {
       idleDuration++
     } else {
+      console.table(readyQueue)
       if (idleDuration > 0) {
         fragments.push({
           duration: idleDuration,
@@ -44,6 +51,11 @@ export const roundRobin = (processes: Array<Process>, totalBurst: number, quantu
       fragmentDuration++
       readyQueue[0].duration--
       if (fragmentDuration === quantum || readyQueue[0].duration === 0) {
+        if (readyQueue[0].duration > 0) {
+          toPreempt = readyQueue[0]
+        } else {
+          remaining = remaining.filter((proc) => proc.name != readyQueue[0].name)
+        }
         fragments.push({
           ...readyQueue[0],
           duration: fragmentDuration,
@@ -52,11 +64,7 @@ export const roundRobin = (processes: Array<Process>, totalBurst: number, quantu
         })
 
         fragmentDuration = 0
-        if (readyQueue[0].duration > 0) {
-          readyQueue.push(readyQueue[0])
-        } else {
-          remaining = remaining.filter((proc) => proc.name != readyQueue[0].name)
-        }
+
         readyQueue.shift()
       }
     }

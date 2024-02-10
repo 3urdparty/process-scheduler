@@ -41,7 +41,8 @@ export const preemptiveAlgorithm = (
           priority: proc.priority
         }))
     )
-
+    console.log('tick', tick)
+    console.table(readyQueue)
     // if there are no processes in the ready queue, then the CPU is idle
     if (readyQueue.length <= 0) {
       idleDuration++ // increments the idle duration
@@ -60,12 +61,14 @@ export const preemptiveAlgorithm = (
 
       // sorts the ready queue by priority, so the next process to be executed is at the start
       readyQueue.sort(prioritizer)
-      console.log('tick', tick)
+      console.log('sorted ready queue')
       console.table(readyQueue)
+      
+      
 
       // if there is no current process, then we set the current process to the first process in the ready queue
       if (currentFragment == null) currentFragment = readyQueue[0]
-      else if (currentFragment != readyQueue[0]) {
+      else if (currentFragment.name != readyQueue[0].name) {
         // if the current process is not the first process in the ready queue, then we preempt the current process
         fragments.push({
           ...currentFragment,
@@ -79,7 +82,9 @@ export const preemptiveAlgorithm = (
 
         readyQueue = readyQueue.filter((proc) => proc.name != currentFragment?.name)
 
+
         readyQueue.push(currentFragment)
+
         // sets the current process to the first process in the ready queue
         currentFragment = readyQueue[0]
       }

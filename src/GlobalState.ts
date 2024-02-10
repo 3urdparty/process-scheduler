@@ -10,9 +10,9 @@ export const useGlobalState = createGlobalState(() => {
     // the algorithms
     { name: 'Round Robin', quantum: 3 },
     { name: 'Preemptive SJF' },
-    { name: 'Non-preemptive SJF' },
-    { name: 'Preemptive Priority' },
     { name: 'Non-preemptive Priority' },
+    { name: 'Preemptive Priority' },
+    { name: 'Non-preemptive SJF' },
     { name: 'First Come First Serve' }
   ])
 
