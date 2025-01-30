@@ -1,7 +1,7 @@
-import type { Algorithm, Process, ProcessFragment } from './types'
-import { nonPreemptiveAlgorithm } from './utils/nonpreemptive'
-import { preemptiveAlgorithm } from './utils/preemptive'
-import { roundRobin } from './utils/roundrobin'
+import type { Algorithm, Process, ProcessFragment } from './../types/'
+import { nonPreemptiveAlgorithm } from './nonpreemptive'
+import { preemptiveAlgorithm } from './preemptive'
+import { roundRobin } from './roundrobin'
 
 // decides which scheduling algorithm the use and then returns the scheduled fragments
 export const schedule = (

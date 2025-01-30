@@ -1,7 +1,7 @@
 // store.js
 import { createGlobalState, useStorage } from '@vueuse/core'
 import { reactive, ref } from 'vue'
-import { type Algorithm, type Process } from './types'
+import { type Algorithm, type Process } from '@/types'
 export const useGlobalState = createGlobalState(() => {
   // state
   const merge = ref(true) // whether to merge processes;

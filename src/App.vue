@@ -2,7 +2,7 @@
 import { ArrowUturnLeftIcon, PlusIcon } from '@heroicons/vue/24/solid'
 import { useFavicon } from '@vueuse/core'
 import { ref } from 'vue'
-import { useGlobalState } from './GlobalState'
+import { useGlobalState } from '@/stores/global'
 import ComboBox from './components/ComboBox.vue'
 import EditToggle from './components/EditToggle.vue'
 import PlayBack from './components/PlayBack.vue'

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useGlobalState } from '@/GlobalState'
-import { schedule } from '@/algorithms'
+import { useGlobalState } from '@/stores/global'
+import { schedule } from '@/utils/algorithms'
 import { InformationCircleIcon, PlayCircleIcon } from '@heroicons/vue/24/solid'
 import { get, reactify } from '@vueuse/core'
 

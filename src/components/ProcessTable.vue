@@ -84,8 +84,8 @@
 </template>
 
 <script setup lang="ts">
-import { useGlobalState } from '@/GlobalState'
-import { calculateTurnaroundTime, calculateWaitingTime } from '@/algorithms'
+import { useGlobalState } from '@/stores/global'
+import { calculateTurnaroundTime, calculateWaitingTime } from '@/utils/algorithms'
 import { type Process } from '@/types'
 import { computed } from 'vue'
 
@@ -119,14 +119,15 @@ const columns = [
 
 const avgTurnaroundTime = computed(
   () =>
-    processes.value.reduce((acc, curr) => acc + calculateTurnaroundTime(curr), 0) /
+    processes.value.reduce((acc: number, curr: Process) => acc + calculateTurnaroundTime(curr), 0) /
       processes.value.length || 0
 )
 
-const { selectedAlgorithm } = useGlobalState()
+// const { selectedAlgorithm } = useGlobalState()
+
 const avgWaitingTime = computed(
   () =>
-    processes.value.reduce((acc, curr) => acc + calculateWaitingTime(curr), 0) /
+    processes.value.reduce((acc: number, curr: Process) => acc + calculateWaitingTime(curr), 0) /
       processes.value.length || 0
 )
 </script>

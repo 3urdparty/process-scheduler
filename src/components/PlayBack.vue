@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useGlobalState } from '@/GlobalState'
+import { useGlobalState } from '@/stores/global'
 import { BackwardIcon, ForwardIcon, PlayIcon, StopIcon } from '@heroicons/vue/24/solid'
 import { useIntervalFn } from '@vueuse/core'
 
