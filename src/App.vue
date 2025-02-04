@@ -17,16 +17,17 @@ useFavicon('/src/assets/favicon-32x32.png')
 
 <template>
   <div class="space-y-8 mt-8">
+    Test
     <div class="items-center">
       <img src="/src/assets/logo.png" class="w-32" />
-      <h1 class="text-4xl font-bold pl-8 text-violet-800">Grape Process Scheduler</h1>
+      <h1 class="text-4xl font-bold pl-8 text-violet-800">Process Scheduler</h1>
       <p class="text-lg font-light pl-9 text-violet-400">
         Courtesy of
         <a href="https://github.com/3urdparty/" class="text-violet-700/80 font-medium">@3urdparty</a
         >, find the source code
         <a
           class="text-violet-700/80 font-medium underline"
-          href="https://github.com/3urdparty/grape-process-scheduler"
+          href="https://github.com/3urdparty/process-scheduler"
           >here</a
         >
       </p>

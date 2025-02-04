@@ -26,7 +26,7 @@ export const roundRobin = (processes: Array<Process>, totalBurst: number, quantu
           start: proc.arrival_time,
           priority: proc.priority
         }))
-        .sort((a, b) => a.priority - b.priority)
+        .sort((a, b) => b.priority - a.priority)
     )
 
     if (toPreempt) {

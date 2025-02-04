@@ -47,13 +47,13 @@
   "main": "postcss.config.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/3urdparty/grape-process-scheduler.git"
+    "url": "git+https://github.com/3urdparty/process-scheduler.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/3urdparty/grape-process-scheduler/issues"
+    "url": "https://github.com/3urdparty/process-scheduler/issues"
   },
-  "homepage": "https://github.com/3urdparty/grape-process-scheduler#readme"
+  "homepage": "https://github.com/3urdparty/process-scheduler#readme"
 }
