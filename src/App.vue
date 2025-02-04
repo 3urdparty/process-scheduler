@@ -17,7 +17,6 @@ useFavicon('/src/assets/favicon-32x32.png')
 
 <template>
   <div class="space-y-8 mt-8">
-    Test
     <div class="items-center">
       <img src="/src/assets/logo.png" class="w-32" />
       <h1 class="text-4xl font-bold pl-8 text-violet-800">Process Scheduler</h1>
